@@ -67,21 +67,34 @@ public class Model {
                 model.addEq(s[i][i], 0.0);
             }
             
+            
+            
             //if there's a path going from city a to b,
             //there's also a path in the opposite direction, from b to a.
+            //traveler can't go back to the city they just left.
             for(int i = 0; i < Data.cities; i++){
                 for(int j = 0; j < Data.cities; j++){
-                    model.addEq(s[i][j], s[j][i]);
+                    //model.addEq(s[i][j], s[j][i]);
+                    model.add(model.ifThen(model.eq(s[i][j], 1.0), model.eq(s[j][i], 0.0)));
                 }
             }
             
-            //at least two edges connecting each vertex
+            //exactly one edge going in for each city
             for(int i = 0; i < Data.cities; i++){
-                IloLinearNumExpr twoEdgesConstraint = model.linearNumExpr();
+                IloLinearNumExpr edgeGoingInConstraint = model.linearNumExpr();
                 for(int j = 0; j < Data.cities; j++){
-                    twoEdgesConstraint.addTerm(1.0, s[i][j]);
+                    edgeGoingInConstraint.addTerm(1.0, s[i][j]);
                 }
-                model.addGe(twoEdgesConstraint, 2);
+                model.addEq(edgeGoingInConstraint, 1);
+            }
+            
+            //exactly one edge going out for each city
+            for(int j = 0; j < Data.cities; j++){
+                IloLinearNumExpr edgeGoingOutConstraint = model.linearNumExpr();
+                for(int i = 0; i < Data.cities; i++){
+                    edgeGoingOutConstraint.addTerm(1.0, s[i][j]);
+                }
+                model.addEq(edgeGoingOutConstraint, 1);
             }
             
             if(model.solve()){
