@@ -13,6 +13,8 @@ import java.util.logging.Logger;
 public class Model {
     
     public static IloCplex model;
+    public static IloIntVar[][] s;
+    public static GUI gui;
     
     public static void printToFile(IloIntVar[][] s) throws IOException, IloException {
         File file = new File("graph.txt");
@@ -32,7 +34,7 @@ public class Model {
     public static void main(String[] args) throws IOException {
         try {
             Data.readInstance();
-            Data.printInstance();
+            //Data.printInstance();
         } catch (IOException ex) {
             Logger.getLogger(Model.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -44,7 +46,7 @@ public class Model {
             model.setParam(IloCplex.DoubleParam.TiLim, 60.0);
             
             //decision variables
-            IloIntVar[][] s = new IloIntVar[Data.cities][Data.cities];
+            s = new IloIntVar[Data.cities][Data.cities];
             for(int i = 0; i < Data.cities; i++){
                 for(int j = 0; j < Data.cities; j++){
                     //each edge can be used or not
@@ -67,14 +69,9 @@ public class Model {
                 model.addEq(s[i][i], 0.0);
             }
             
-            
-            
-            //if there's a path going from city a to b,
-            //there's also a path in the opposite direction, from b to a.
             //traveler can't go back to the city they just left.
             for(int i = 0; i < Data.cities; i++){
                 for(int j = 0; j < Data.cities; j++){
-                    //model.addEq(s[i][j], s[j][i]);
                     model.add(model.ifThen(model.eq(s[i][j], 1.0), model.eq(s[j][i], 0.0)));
                 }
             }
@@ -102,14 +99,8 @@ public class Model {
                 System.out.println(model.getStatus());
                 System.out.println(model.getObjValue());
                 System.out.println("=============================================================");
-                System.out.println("========================= Solution ==========================");
-                for(int i = 0; i < Data.cities; i++){
-                    for(int j = 0; j < Data.cities; j++){
-                        System.out.print(Math.abs(model.getValue(s[i][j])) + "\t");
-                    }
-                    System.out.println();
-                }
-                printToFile(s);
+                gui = new GUI(Data.xy);
+                gui.repaint();
             }
             else {
                System.out.println(model.getStatus()); 
