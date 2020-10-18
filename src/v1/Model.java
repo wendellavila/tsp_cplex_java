@@ -3,15 +3,33 @@ import ilog.concert.IloException;
 import ilog.concert.IloIntVar;
 import ilog.concert.IloLinearNumExpr;
 import ilog.cplex.IloCplex;
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class Model {
     
     public static IloCplex model;
+    
+    public static void printToFile(IloIntVar[][] s) throws IOException, IloException {
+        File file = new File("graph.txt");
+        FileWriter write = new FileWriter(file);
+        PrintWriter print = new PrintWriter(write);
 
-    public static void main(String[] args) {
+        for(int i = 0; i < Data.cities; i++){
+            for(int j = 0; j < Data.cities; j++){
+                print.print(((int) model.getValue(s[i][j]) * Data.distances[i][j]) + " ");
+            }
+            print.println();
+        }
+        print.close();
+        write.close();
+    }
+
+    public static void main(String[] args) throws IOException {
         try {
             Data.readInstance();
             Data.printInstance();
@@ -78,6 +96,7 @@ public class Model {
                     }
                     System.out.println();
                 }
+                printToFile(s);
             }
             else {
                System.out.println(model.getStatus()); 
