@@ -17,7 +17,6 @@ public class Data {
     public static void readInstance() throws IOException{
         System.out.println("Reading instance...");
         
-        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
         Path path = Paths.get("newInstance.tsp");
         Scanner scan = new Scanner(path);
         
@@ -34,8 +33,6 @@ public class Data {
         }
         
         scan.close();
-        br.close();
-        
         findDistances();
         
         System.out.println("Instance reading finished.");
