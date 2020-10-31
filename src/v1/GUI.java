@@ -11,13 +11,28 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
+/*============================================
+Traveling salesman problem solved with CPLEX
+==============================================
+Author: Wendell Joao Castro de Avila
+RA: 2017.1.08.013
+Date: 31.10.2020
+==============================================*/
+
 public class GUI extends JFrame {
     
     private int[][] xy;
     private IloIntVar[][] s;
-    private double[][] sTemp;
+    private double[][] currentSolution;
     
     public GUI(float[][] xy){
+        this.currentSolution = new double[Data.cities][Data.cities];
+        for(int i = 0; i < Data.cities; i++){
+            for(int j = 0; j < Data.cities; j++){
+                this.currentSolution[i][j] = 0.0;
+            }
+        }
+        
         //float to int
         this.xy = new int[xy.length][xy[0].length];
         for(int i = 0; i < this.xy.length; ++i){
@@ -28,8 +43,8 @@ public class GUI extends JFrame {
         generateScreen();
     }
     
-    public GUI(float[][] xy, double[][] sTemp){
-        this.sTemp = sTemp;
+    public GUI(float[][] xy, double[][] currentSolution){
+        this.currentSolution = currentSolution;
         
         //float to int
         this.xy = new int[xy.length][xy[0].length];
@@ -44,23 +59,25 @@ public class GUI extends JFrame {
     public void generateScreen(){
         drawCities();
         
-        setLocation(400, 0); //initial position of window in the screen
+        setLocation(800, 0); //initial position of window in the screen
         setLayout(null);  //no layout manager
-        setSize(900,700);//frame size 1000 width x 800 height
+        setSize(700,700);//frame size 1000 width x 800 height
         setVisible(true); //frame will be visible, by default not visible
+        setAlwaysOnTop(true);
 
-        //paint(this.getGraphics());
+        paint(this.getGraphics());
         
-//        //close window on x icon click
-//        this.addWindowListener(new WindowAdapter() {
-//            public void windowClosing(WindowEvent we) {
-//                System.exit(0);
-//            }
-//        });
+        //close window on x icon click
+        this.addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent we) {
+                dispose();
+            }
+        });
     }
     
-    public void setSTemp(double[][] sTemp){
-        this.sTemp = sTemp;
+    public void setCurrentSolution(double[][] currentSolution){
+        this.currentSolution = currentSolution;
     }
     
     public void drawCities(){
@@ -82,7 +99,7 @@ public class GUI extends JFrame {
         for(int i = 0; i < Data.cities; i++) {
             for(int j = 0; j < Data.cities; j++) {
                 // == 1
-                if(sTemp[i][j] > 0.9){
+                if(currentSolution[i][j] > 0.9){
                     Line2D line = new Line2D.Float(
                     xy[i][0] * 6 + 15, xy[i][1] * 6 + 45,
                     xy[j][0] * 6 + 15, xy[j][1] * 6 + 45);
