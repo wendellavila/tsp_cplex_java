@@ -1,0 +1,17 @@
+//list of subtours found in instance "newInstance.tsp" in each iteration
+//comma separated indexes. Ordenation is irrelevant.
+//============1st iteration============
+28,42,51
+23,46,52
+0,35,40
+7, 33, 38, 56
+1,10,31,18,15,5,30,8,11
+//============2nd iteration============
+16,20,22
+28,42,51,9,13
+//============3rd iteration============
+7,33,56
+0,38,40
+23,48,52,35
+//============4th iteration============
+7,33,38,56

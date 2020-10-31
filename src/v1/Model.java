@@ -7,7 +7,8 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.Arrays;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Scanner;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -33,51 +34,46 @@ public class Model {
         write.close();
     }
     
-    public static void createSubtourConstraints() throws IloException {
+    public static void createSubtourConstraints() throws IloException, IOException {
         
-            Scanner in = new Scanner(System.in);
-            System.out.println("=============================================================");
-            System.out.println("Creating subtour constraints");
-            while(true){
-                System.out.println("Enter with at least 3 and at most "+ (Data.cities-1) +" comma separated cities (e.g '0,1,2'): ");
-                String input = in.nextLine();
-                String [] stringArray = input.split(",");
-                boolean invalid = false;
-                
-                //string to int array
-                int[] subtour = new int[stringArray.length];
-                try {
-                    for(int i = 0; i < stringArray.length; i++){
-                        subtour[i] = Integer.parseInt(stringArray[i]);
-                        //set will be discarded if invalid values are found
-                        if(subtour[i] < 0 || subtour[i] > Data.cities-1){
-                            invalid = true;
-                        }
-                    }
-                } catch (NumberFormatException ex){
-                    //function will exit if anything other than comma separated integers is passed
-                    invalid = true;
-                }
+        Path path = Paths.get("subtours.txt");
+        Scanner scan = new Scanner(path);
+        
+        System.out.println("=============================================================");
+        System.out.println("Creating subtour constraints from file");
+        while(scan.hasNextLine()){
+            String input = scan.nextLine();
+            String [] stringArray = input.split(",");
+            boolean invalid = false;
 
-                //at least 3 cities and at most n-1 in the subset
-                if(stringArray.length >= 3 && stringArray.length < Data.cities && invalid == false){
-                    //subtour constraint
-                    IloLinearNumExpr noSubtours = model.linearNumExpr();
-                    for(int i = 0; i < subtour.length; i++){
-                        for(int j = 0; j < subtour.length; j++){
-                            noSubtours.addTerm(1.0, s[subtour[i]][subtour[j]]);
-                        }
+            //string to int array
+            int[] subtour = new int[stringArray.length];
+            try {
+                for(int i = 0; i < stringArray.length; i++){
+                    subtour[i] = Integer.parseInt(stringArray[i]);
+                    //set will be discarded if invalid values are found
+                    if(subtour[i] < 0 || subtour[i] > Data.cities-1){
+                        invalid = true;
                     }
-                    model.addLe(noSubtours, (subtour.length - 1));
-                    System.out.println("Constraint added for subset " + input);
                 }
-                else {
-                    System.out.println(input + " is not a valid subset. Leaving...");
-                    System.out.println("=============================================================");
-                    break;
-                }
+            } catch (NumberFormatException ex){
+                //function will exit if anything other than comma separated integers is passed
+                invalid = true;
             }
-        
+
+            //at least 3 cities and at most n-1 in the subset
+            if(stringArray.length >= 3 && stringArray.length < Data.cities && invalid == false){
+                //subtour constraint
+                IloLinearNumExpr noSubtours = model.linearNumExpr();
+                for(int i = 0; i < subtour.length; i++){
+                    for(int j = 0; j < subtour.length; j++){
+                        noSubtours.addTerm(1.0, s[subtour[i]][subtour[j]]);
+                    }
+                }
+                model.addLe(noSubtours, (subtour.length - 1));
+                System.out.println("Constraint added for subset " + input);
+            }
+        }
     }
 
     public static void main(String[] args) throws IOException {
@@ -142,22 +138,44 @@ public class Model {
                 }
                 model.addEq(edgeGoingOutConstraint, 1.0);
             }
-            createSubtourConstraints();
+            
+            double[][] s0 = new double[Data.cities][Data.cities];
+                for(int i = 0; i < Data.cities; i++){
+                    for(int j = 0; j < Data.cities; j++){
+                        s0[i][j] = 0.0;
+                    }
+                }
+            
+            gui = new GUI(Data.xy, s0);
+            model.use(new LazyConstraintSubtours(s, model));
+            //model.use(new LazyConstraintSubtours(s, model, gui));
+            
+            //create constraints from file
+            //createSubtourConstraints();
             if(model.solve()){
                 System.out.println("=============================================================");
                 System.out.println(model.getStatus());
                 System.out.println(model.getObjValue());
                 System.out.println("=============================================================");
                 
-                gui = new GUI(Data.xy);
+                // Get the current solution
+                double[][] sTemp = new double[Data.cities][Data.cities];
+                for(int i = 0; i < Data.cities; i++){
+                    for(int j = 0; j < Data.cities; j++){
+                        sTemp[i][j] = model.getValue(s[i][j]);
+                    }
+                }
+                gui.setSTemp(sTemp);
                 gui.repaint();
             }
             else {
                System.out.println(model.getStatus()); 
             }
+            
             long endTime = System.currentTimeMillis();
             System.out.println("Execution time: " + (endTime - startTime) + " milliseconds");
             
+            model.end();
         } catch (IloException ex) {
             Logger.getLogger(Model.class.getName()).log(Level.SEVERE, null, ex);
         }
